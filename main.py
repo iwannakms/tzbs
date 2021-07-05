@@ -23,7 +23,7 @@ print("Started...")
 
 user_data = []
 
-
+"""
 class Driver:
 
 	def __init__(self, type_of_transport, number_of_seats, start_point, end_point, travel_time):
@@ -31,7 +31,7 @@ class Driver:
 		self.number_of_seats = number_of_seats
 		self.start_point = start_point
 		self.end_point = end_point
-		self.travel_time = travel_time
+		self.travel_time = travel_time"""
 
 
 @bot.message_handler(commands=['start'])
