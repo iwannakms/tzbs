@@ -6,22 +6,8 @@ import mysql.connector
 bot = telebot.TeleBot("1878599177:AAFrV-J58nUKCEj6KCEIRnGWl6wu-RujrJ8")
 
 
-# db = mysql.connector.connect(
-# 	host='localhost',
-# 	user='nuradil',
-# 	passwd='iwannakms',
-# 	port='3306'
-# )
-
-# cursor = db.cursor()
-#
-
-
-# print(db)
-
 print("Started...")
 
-user_data = []
 
 """
 class Driver:
@@ -40,78 +26,94 @@ def send_welcome(message):
 	markup.add('/kettik')
 	bot.send_message(message.chat.id, "бот TezBus приветствует вас!")
 	bot.send_message(message.chat.id, "Нажмите на /kettik для того, чтобы начать.", reply_markup=markup)
-
-
-"""@bot.message_handler(commands=['help'])
-def get_help(message):
-	commands = bot.get_my_commands()
-	bot.send_message(message.chat.id, commands)"""
+	print(message.chat.id)
 
 
 @bot.message_handler(commands=['kettik'])
 def get_user_direction(message):
-	markup_inline = types.InlineKeyboardMarkup()
-	item_driver = types.InlineKeyboardButton(text='Водитель', callback_data='driver')
-	item_passenger = types.InlineKeyboardButton(text='Пассажир', callback_data='passenger')
-
-	markup_inline.add(item_driver, item_passenger)
-
-	bot.send_message(message.chat.id, "Кто вы?", reply_markup=markup_inline)
-
-	# if not bot.message_handler(commands=[""]):
-	# 	bot.send_message(message.chat.id, "")
-	# else:
-	# 	bot.send_message(message.chat.id,"Да заебал нажимать!")
-	# # bot.reply_to(message, "Отлично! ")
-
-
-@bot.callback_query_handler(func=lambda call: True)
-def get_type_of_transport(call):
-	if call.data == 'driver':
-		bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Принято', reply_markup=None)
-		transport_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-		transport_markup.add('машина', 'автобус', 'поезд')
-		bot.send_message(call.message.chat.id, 'Какой у вас вид транпорта?', reply_markup=transport_markup)
-	else:
-		bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Принято', reply_markup=None)
+	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+	markup.add('Водитель', 'Пассажир')
+	bot.send_message(message.chat.id, "Кто вы?", reply_markup=markup)
 
 
 @bot.message_handler(content_types=['text'])
+def get_type_of_transport(message):
+	if message.text == 'Водитель' or message.text == 'Ввести заново тип транспорта':
+		transport_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+		transport_markup.add('Машина', 'Автобус')
+		bot.send_message(message.chat.id, 'Какой у вас вид транпорта?', reply_markup=transport_markup)
+		bot.register_next_step_handler(message, get_number_of_seats)
+
+
 def get_number_of_seats(message):
-	if message.text == 'машина' or message.text == 'автобус' or message.text == 'поезд':
+	if message.text == 'Машина' or message.text == 'Автобус' or message.text == 'Ввести заново количество мест':
 		seats_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-		seats_markup.add('1', '2', '3', '4', '5', '6')
+		seats_markup.add('1', '2', '3', '4', '5', '6', 'Ввести заново тип транспорта')
 		bot.send_message(message.chat.id, 'Выберите количество ваших мест, либо введите с клавиатуры.', reply_markup=seats_markup)
 		bot.register_next_step_handler(message, get_start_point)
 	else:
 		bot.send_message(message.chat.id, 'Ошибка.')
 
 
-@bot.message_handler(content_types=['text'])
 def get_start_point(message):
-	if message.text.isdigit():
-		bot.send_message(message.chat.id, 'Введите место начала поездки.')
+	if message.text == 'Ввести заново тип транспорта':
+		get_type_of_transport(message)
+	elif message.text.isdigit() or message.text == 'Ввести заново место начала поездки':
+		markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+		markup.add('Ввести заново количество мест')
+		bot.send_message(message.chat.id, 'Введите место начала поездки.', reply_markup=markup)
 		bot.register_next_step_handler(message, get_end_point)
 	else:
 		bot.send_message(message.chat.id, 'Ошибка')
 
 
-@bot.message_handler(content_types=['text'])
 def get_end_point(message):
-	bot.send_message(message.chat.id, 'Введите место конца поездки.')
-	bot.register_next_step_handler(message, get_time_of_travel)
+	if message.text == 'Ввести заново количество мест':
+		get_number_of_seats(message)
+	else:
+		markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+		markup.add('Ввести заново место начала поездки')
+		bot.send_message(message.chat.id, 'Введите место конца поездки.', reply_markup=markup)
+		bot.register_next_step_handler(message, get_time_of_travel)
 
 
-@bot.message_handler(content_types=['text'])
 def get_time_of_travel(message):
-	bot.send_message(message.chat.id, 'Введите время начала поездки')
+	if message.text == 'Ввести заново место начала поездки':
+		get_start_point(message)
+	else:
+		markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+		markup.add('Ввести заново место конца поездки')
+		bot.send_message(message.chat.id, 'Введите время начала поездки', reply_markup=markup)
+		bot.register_next_step_handler(message, get_price_of_travel)
 
 
-if __name__ == 'main':
-	bot.polling(none_stop=True)
+def get_price_of_travel(message):
+	if message.text == 'Ввести заново место конца поездки':
+		get_end_point(message)
+	else:
+		markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+		markup.add('Ввести заново время поездки')
+		bot.send_message(message.chat.id, 'Введите цену поездки', reply_markup=markup)
+		bot.register_next_step_handler(message, reinput_time_of_travel)
 
-# @bot.message_handler(func=lambda message: True)
-# def echo_all(message):
-# 	bot.reply_to(message, message.text)
-#
-bot.polling()
+
+def reinput_time_of_travel(message):
+	if message.text == 'Ввести заново время поездки':
+		get_time_of_travel(message)
+	else:
+		markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+		markup.add('да', 'нет')
+		bot.send_message(message.chat.id, 'Хотите ввести заново цену поездки?', reply_markup=markup)
+		bot.register_next_step_handler(message, reinput_price_of_travel)
+
+
+def reinput_price_of_travel(message):
+	if message.text == 'да':
+		get_price_of_travel(message)
+	else:
+		markup = types.ReplyKeyboardRemove(selective=False)
+		bot.send_message(message.chat.id, 'Регистрация прошла успешно', reply_markup=markup)
+
+
+bot.polling(none_stop=True)
+
