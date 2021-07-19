@@ -118,13 +118,20 @@ def reinput_end_point(message):
 #ОБРАБОТКА ДАТЫ ПОЕЗДКИ
 def get_date_of_travel(message):
 	date_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-	date_markup.add('Ввести заново место конца поездки')
+	date_markup.add('Сегодня', 'Завтра', 'Ввести заново место конца поездки')
 	bot.send_message(message.chat.id, 'Введите дату поездки в формате год-месяц-день \nНапример: 1999-12-31 ', reply_markup=date_markup)
 	bot.register_next_step_handler(message, reinput_end_point)
 
 
 def post_date_of_travel(message):
-	user_data[message.chat.id]['date_of_travel'] = message.text
+	today = datetime.date.today()
+	tomorrow = today + datetime.timedelta(days=1)
+	if message.text.lower() == 'сегодня':
+		user_data[message.chat.id]['date_of_travel'] = today.strftime('%Y-%m-%d')
+	elif message.text.lower() == 'завтра':
+		user_data[message.chat.id]['date_of_travel'] = tomorrow.strftime('%Y-%m-%d')
+	else:
+		user_data[message.chat.id]['date_of_travel'] = message.text
 	return get_time_of_travel(message)
 
 
