@@ -1,6 +1,30 @@
 import telebot
+import collections
 from telebot import types
 import mysql.connector
+from socket import error as SocketError
+import errno
+
+
+try:
+	mydb = mysql.connector.connect(
+	  host="localhost",
+	  user="root",
+	  password="",
+	  database="tezbus_db"
+	)
+except mysql.connector.Error as err:
+  if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+    print("Something is wrong with your user name or password")
+    sys.exit()
+  elif err.errno == errorcode.ER_BAD_DB_ERROR:
+    print("Database does not exist")
+    sys.exit()
+  else:
+    print(err)
+    sys.exit()
+
+mycursor = mydb.cursor()
 
 
 bot = telebot.TeleBot("1878599177:AAFrV-J58nUKCEj6KCEIRnGWl6wu-RujrJ8")
@@ -8,13 +32,15 @@ bot = telebot.TeleBot("1878599177:AAFrV-J58nUKCEj6KCEIRnGWl6wu-RujrJ8")
 
 print("Started...")
 
-user_data = {}
+
+user_data = collections.defaultdict(dict)
 
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 	markup.add('/kettik')
+	user_data[message.chat.id]['id'] = message.chat.id
 	bot.send_message(message.chat.id, "бот TezBus приветствует вас!")
 	bot.send_message(message.chat.id, "Нажмите на /kettik для того, чтобы начать.", reply_markup=markup)
 	print(message.chat.id)
@@ -33,7 +59,7 @@ def get_user_role(message):
 @bot.message_handler(content_types=['text'])
 def post_user_role(message):
 	if message.text.lower() == 'водитель' or message.text.lower() == 'пассажир':
-		user_data['role'] = message.text
+		user_data[message.chat.id]['role'] = message.text
 		return get_start_point(message) #ПЕРЕХОДИМ В ВВОДУ МЕСТА НАЧАЛА ПОЕЗДКИ
 	else:
 		bot.send_message(message.chat.id, 'ОШИБКА! Введите заново.')
@@ -56,7 +82,7 @@ def get_start_point(message):
 
 
 def post_start_point(message):
-	user_data['start_point'] = message.text
+	user_data[message.chat.id]['start_point'] = message.text
 	return get_end_point(message)
 
 
@@ -65,7 +91,6 @@ def reinput_start_point(message):
 		return get_start_point(message)
 
 	return post_end_point(message)
-
 
 
 #ОБРАБОТКА МЕСТА КОНЦА ПОЕЗДКИ
@@ -77,7 +102,7 @@ def get_end_point(message):
 
 
 def post_end_point(message):
-	user_data['end_point'] = message.text
+	user_data[message.chat.id]['end_point'] = message.text
 	return get_date_of_travel(message)
 
 
@@ -97,7 +122,7 @@ def get_date_of_travel(message):
 
 
 def post_date_of_travel(message):
-	user_data['date_of_travel'] = message.text
+	user_data[message.chat.id]['date_of_travel'] = message.text
 	return get_time_of_travel(message)
 
 
@@ -117,7 +142,7 @@ def get_time_of_travel(message):
 
 
 def post_time_of_travel(message):
-	user_data['time_of_travel'] = message.text
+	user_data[message.chat.id]['time_of_travel'] = message.text
 	return get_type_of_transport(message)
 
 
@@ -131,7 +156,7 @@ def reinput_time_of_travel(message):
 #ОБРАБОТКА ТИПА ТРАНСПОРТА ПОЛЬЗОВАТЕЛЯ
 def get_type_of_transport(message):
 	type_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-	if user_data['role'].lower() == 'водитель':
+	if user_data[message.chat.id]['role'].lower() == 'водитель':
 		type_markup.add('машина', 'автобус', 'ввести заново время поездки')
 	else:
 		type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
@@ -141,16 +166,16 @@ def get_type_of_transport(message):
 
 
 def post_type_of_transport(message):
-	if user_data['role'].lower == 'водитель':
+	if user_data[message.chat.id]['role'].lower == 'водитель':
 		if message.text.lower() == 'машина' or message.text.lower() == 'автобус':
-			user_data['type_of_transport'] = message.text
+			user_data[message.chat.id]['type_of_transport'] = message.text
 			return get_number_of_seats(message)
 		else:
 			bot.send_message(message.chat.id, 'ОШИБКА! Введите заново')
 			return get_type_of_transport(message)
 	else:
 		if message.text.lower() == 'машина' or message.text.lower() == 'автобус' or message.text.lower() == 'поезд':
-			user_data['type_of_transport'] = message.text
+			user_data[message.chat.id]['type_of_transport'] = message.text
 			return get_number_of_seats(message)
 		else:
 			bot.send_message(message.chat.id, 'ОШИБКА! Введите заново')
@@ -174,7 +199,7 @@ def get_number_of_seats(message):
 
 def post_number_of_seats(message):
 	if message.text.isdigit():
-		user_data['number_of_seats'] = int(message.text)
+		user_data[message.chat.id]['number_of_seats'] = int(message.text)
 		return get_price_of_travel(message)
 	else:
 		bot.send_message(message.chat.id, 'ОШИБКА! Введите заново')
@@ -198,7 +223,7 @@ def get_price_of_travel(message):
 
 def post_price_of_travel(message):
 	if message.text.isdigit():
-		user_data['price_of_travel'] = int(message.text)
+		user_data[message.chat.id]['price_of_travel'] = message.text
 		return get_telephone(message)
 	else:
 		bot.send_message(message.chat.id, 'ОШИБКА. Введите заново')
@@ -221,7 +246,7 @@ def get_telephone(message):
 
 
 def post_telephone(message):
-	user_data['telephone'] = message.text
+	user_data[message.chat.id]['telephone'] = message.text
 	return final(message)
 
 
@@ -243,7 +268,17 @@ def final(message):
 def send_result(message):
 	markup = types.ReplyKeyboardRemove(selective=False)
 	bot.send_message(message.chat.id, 'Регистрация прошла успешно!', reply_markup=markup)
-	bot.send_message(message.chat.id, f"Человек: {user_data['role']}\nМесто начала поездки: {user_data['start_point']}\nМесто конца поездки: {user_data['end_point']}\nДата поездки: {user_data['date_of_travel']}\nВремя поездки: {user_data['time_of_travel']}\nТип транспорта: {user_data['type_of_transport']}\nКоличество мест: {user_data['number_of_seats']}\nЦана поездки: {user_data['price_of_travel']}\nНомер телефона: {user_data['telephone']}")
+	bot.send_message(message.chat.id, f"Человек: {user_data[message.chat.id]['role']}\nМесто начала поездки: {user_data[message.chat.id]['start_point']}\nМесто конца поездки: {user_data[message.chat.id]['end_point']}\nДата поездки: {user_data[message.chat.id]['date_of_travel']}\nВремя поездки: {user_data[message.chat.id]['time_of_travel']}\nТип транспорта: {user_data[message.chat.id]['type_of_transport']}\nКоличество мест: {user_data[message.chat.id]['number_of_seats']}\nЦана поездки: {user_data[message.chat.id]['price_of_travel']}\nНомер телефона: {user_data[message.chat.id]['telephone']}")
 
+	sql = "INSERT INTO drivers(user_id, start_point, end_point, date_of_travel, time_of_travel, type_of_transport, number_of_seats, price_of_travel, telephone) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+	val = (user_data[message.chat.id]['id'], user_data[message.chat.id]['start_point'], user_data[message.chat.id]['end_point'], user_data[message.chat.id]['date_of_travel'], user_data[message.chat.id]['time_of_travel'], user_data[message.chat.id]['type_of_transport'], user_data[message.chat.id]['number_of_seats'], user_data[message.chat.id]['price_of_travel'], user_data[message.chat.id]['telephone'])
+	mycursor.execute(sql, val)
+	mydb.commit()
+
+bot.enable_save_next_step_handlers(delay=2)
+
+
+bot.load_next_step_handlers()
 
 bot.polling(none_stop=True)
+
