@@ -4,6 +4,8 @@ from telebot import types
 import mysql.connector
 from socket import error as SocketError
 import errno
+import re
+import datetime
 
 
 try:
@@ -82,7 +84,7 @@ def get_start_point(message):
 
 
 def post_start_point(message):
-	user_data[message.chat.id]['start_point'] = message.text
+	user_data[message.chat.id]['start_point'] = re.sub(r"\d+", "", message.text, flags=re.UNICODE)
 	return get_end_point(message)
 
 
@@ -102,7 +104,7 @@ def get_end_point(message):
 
 
 def post_end_point(message):
-	user_data[message.chat.id]['end_point'] = message.text
+	user_data[message.chat.id]['end_point'] = re.sub(r"\d+", "", message.text, flags=re.UNICODE)
 	return get_date_of_travel(message)
 
 
@@ -117,7 +119,7 @@ def reinput_end_point(message):
 def get_date_of_travel(message):
 	date_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 	date_markup.add('Ввести заново место конца поездки')
-	bot.send_message(message.chat.id, 'Введите дату поездки', reply_markup=date_markup)
+	bot.send_message(message.chat.id, 'Введите дату поездки в формате год-месяц-день \nНапример: 1999-12-31 ', reply_markup=date_markup)
 	bot.register_next_step_handler(message, reinput_end_point)
 
 
@@ -270,10 +272,16 @@ def send_result(message):
 	bot.send_message(message.chat.id, 'Регистрация прошла успешно!', reply_markup=markup)
 	bot.send_message(message.chat.id, f"Человек: {user_data[message.chat.id]['role']}\nМесто начала поездки: {user_data[message.chat.id]['start_point']}\nМесто конца поездки: {user_data[message.chat.id]['end_point']}\nДата поездки: {user_data[message.chat.id]['date_of_travel']}\nВремя поездки: {user_data[message.chat.id]['time_of_travel']}\nТип транспорта: {user_data[message.chat.id]['type_of_transport']}\nКоличество мест: {user_data[message.chat.id]['number_of_seats']}\nЦана поездки: {user_data[message.chat.id]['price_of_travel']}\nНомер телефона: {user_data[message.chat.id]['telephone']}")
 
-	sql = "INSERT INTO drivers(user_id, start_point, end_point, date_of_travel, time_of_travel, type_of_transport, number_of_seats, price_of_travel, telephone) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-	val = (user_data[message.chat.id]['id'], user_data[message.chat.id]['start_point'], user_data[message.chat.id]['end_point'], user_data[message.chat.id]['date_of_travel'], user_data[message.chat.id]['time_of_travel'], user_data[message.chat.id]['type_of_transport'], user_data[message.chat.id]['number_of_seats'], user_data[message.chat.id]['price_of_travel'], user_data[message.chat.id]['telephone'])
-	mycursor.execute(sql, val)
-	mydb.commit()
+	if user_data[message.chat.id]['role'] =='Водитель':
+		sql = "INSERT INTO drivers(user_id, start_point, end_point, date_of_travel, time_of_travel, type_of_transport, number_of_seats, price_of_travel, telephone) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+		val = (user_data[message.chat.id]['id'], user_data[message.chat.id]['start_point'], user_data[message.chat.id]['end_point'], user_data[message.chat.id]['date_of_travel'], user_data[message.chat.id]['time_of_travel'], user_data[message.chat.id]['type_of_transport'], user_data[message.chat.id]['number_of_seats'], user_data[message.chat.id]['price_of_travel'], user_data[message.chat.id]['telephone'])
+		mycursor.execute(sql, val)
+		mydb.commit()
+	else:
+		sql = "INSERT INTO passengers(user_id, start_point, end_point, date_of_travel, time_of_travel, type_of_transport, number_of_seats, price_of_travel, telephone) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+		val = (user_data[message.chat.id]['id'], user_data[message.chat.id]['start_point'], user_data[message.chat.id]['end_point'], user_data[message.chat.id]['date_of_travel'], user_data[message.chat.id]['time_of_travel'], user_data[message.chat.id]['type_of_transport'], user_data[message.chat.id]['number_of_seats'], user_data[message.chat.id]['price_of_travel'], user_data[message.chat.id]['telephone'])
+		mycursor.execute(sql, val)
+		mydb.commit()
 
 bot.enable_save_next_step_handlers(delay=2)
 
@@ -281,4 +289,3 @@ bot.enable_save_next_step_handlers(delay=2)
 bot.load_next_step_handlers()
 
 bot.polling(none_stop=True)
-
