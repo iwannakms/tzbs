@@ -290,6 +290,7 @@ def send_result(message):
 		mycursor.execute(sql, val)
 		mydb.commit()
 
+
 bot.enable_save_next_step_handlers(delay=2)
 
 
