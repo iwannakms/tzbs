@@ -170,10 +170,22 @@ def reinput_time_of_travel(message):
 #ОБРАБОТКА ТИПА ТРАНСПОРТА ПОЛЬЗОВАТЕЛЯ
 def get_type_of_transport(message):
     type_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    if user_data[message.chat.id]['role'].lower() == 'водитель':
-        type_markup.add('машина', 'автобус', 'ввести заново время поездки')
-    else:
+    if user_data[message.chat.id]['role'].lower() == 'пассажир' and user_data[message.chat.id]['start_point'].lower() == 'бишкек' and user_data[message.chat.id]['end_point'].lower() == 'балыкчы' or user_data[message.chat.id]['end_point'].lower() == 'рыбачье':
         type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
+    elif user_data[message.chat.id]['role'].lower() == 'пассажир' and user_data[message.chat.id]['start_point'].lower() == 'бишкек' and user_data[message.chat.id]['end_point'].lower() == 'токмок':
+        type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
+    elif user_data[message.chat.id]['role'].lower() == 'пассажир' and user_data[message.chat.id]['start_point'].lower() == 'бишкек' and user_data[message.chat.id]['end_point'].lower() == 'каинды' or user_data[message.chat.id]['end_point'].lower() == 'каиңды':
+        type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
+
+    elif user_data[message.chat.id]['role'].lower() == 'пассажир' and user_data[message.chat.id]['start_point'].lower() == 'балыкчы' or user_data[message.chat.id]['start_point'].lower() == 'балыкчи' or user_data[message.chat.id]['start_point'].lower() == 'рыбачье' and user_data[message.chat.id]['end_point'].lower() == 'бишкек':
+        type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
+    elif user_data[message.chat.id]['role'].lower() == 'пассажир' and user_data[message.chat.id]['start_point'].lower() == 'токмок' and user_data[message.chat.id]['end_point'].lower() == 'бишкек':
+        type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
+    elif user_data[message.chat.id]['role'].lower() == 'пассажир' and user_data[message.chat.id]['start_point'].lower() == 'каинды' or user_data[message.chat.id]['start_point'].lower() == 'каиңды' and user_data[message.chat.id]['end_point'].lower() == 'бишкек':
+        type_markup.add('машина', 'автобус', 'поезд', 'ввести заново время поездки')
+
+    else:
+        type_markup.add('машина', 'автобус', 'ввести заново время поездки')
 
     bot.send_message(message.chat.id, 'Введите тип транспорта.', reply_markup=type_markup)
     bot.register_next_step_handler(message, reinput_time_of_travel)
@@ -285,8 +297,11 @@ def get_result(message):
     result_markup.add('получить рекомендации', 'нет')
     bot.send_message(message.chat.id, 'Регистрация прошла успешно!')
     bot.send_message(message.chat.id, f"Человек: {user_data[message.chat.id]['role']}\nМесто начала поездки: {user_data[message.chat.id]['start_point']}\nМесто конца поездки: {user_data[message.chat.id]['end_point']}\nДата поездки: {user_data[message.chat.id]['date_of_travel']}\nВремя поездки: {user_data[message.chat.id]['time_of_travel']}\nТип транспорта: {user_data[message.chat.id]['type_of_transport']}\nКоличество мест: {user_data[message.chat.id]['number_of_seats']}\nЦана поездки: {user_data[message.chat.id]['price_of_travel']}\nНомер телефона: {user_data[message.chat.id]['telephone']}")
-    bot.send_message(message.chat.id, 'Хотите получить рекомендации?', reply_markup=result_markup)
-    bot.register_next_step_handler(message, send_recommendations)
+    if user_data[message.chat.id]['type_of_transport'] =='поезд':
+        bot.register_next_step_handler(message, send_result)
+    else:
+        bot.send_message(message.chat.id, 'Хотите получить рекомендации?', reply_markup=result_markup)
+        bot.register_next_step_handler(message, send_recommendations)
 
 
 def send_recommendations(message):
@@ -316,7 +331,54 @@ def send_result(message):
     post_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     post_markup.add('отправить','нет')
     if user_data[message.chat.id]['type_of_transport'] =='поезд':
+        if user_data[message.chat.id]['start_point'].lower() == 'бишкек' and user_data[message.chat.id]['end_point'].lower() == 'балыкчы' \
+                or user_data[message.chat.id]['end_point'].lower() == 'рыбачье' and user_data[message.chat.id]['start_point'].lower() == 'балыкчы' \
+                or user_data[message.chat.id]['start_point'].lower() == 'балыкчи' or user_data[message.chat.id]['start_point'].lower() == 'рыбачье' \
+                and user_data[message.chat.id]['end_point'].lower() == 'бишкек':
+            bot.send_message(message.chat.id, """Поезд “Бишкек-Рыбачье”, “Рыбачье-Бишкек”. 
+
+Время указано местное.
+
+С 15-июля по 31-августа 2021 года ежедневно.
+
+Поезд №608 “Бишкек I – Рыбачье” время отправления по местному времени со станции «Бишкек I» (Пишпек) в 07 часов 00 минут, время прибытия на станцию Рыбачье в 11 часов 59 минут.
+
+Поезд №609 “Рыбачье – Бишкек I»  время отправления по местному времени со станции «Рыбачье» в 17 часов 15 минут, время прибытия на станцию «Бишкек I» (Пишпек) в 22 часа 03 минуты.
+
+Стоимость проезда:
+Взрослый билет: 69 сом
+Детский билет: 34 сом  (от 5 до 10 лет)
+ """)
+        elif user_data[message.chat.id]['start_point'].lower() == 'бишкек' and user_data[message.chat.id]['end_point'].lower() == 'токмок' \
+                or user_data[message.chat.id]['start_point'].lower() == 'токмок' \
+                and user_data[message.chat.id]['end_point'].lower() == 'бишкек':
+            bot.send_message(message.chat.id, """ Пригородный  поезд «Бишкек-Токмок», «Токмок-Бишкек»
+
+Время указано местное.
+
+Поезд №6050 “Бишкек I – Токмок” время отправления по местному времени со станции “Бишкек I» (Пишпек) в 17 часов 20 минут, время прибытия на станцию Токмок в 19 часов 35 минут.
+Поезд №6051 “Токмок - Бишкек I” время отправления по местному времени со станции «Токмок» в 05 часов 05 минут, время прибытия на станцию “Бишкек I” (Пишпек) в 07 часов 21 минуту.
+
+Стоимость проезда:
+Взрослый билет: 26 сом
+Детский билет: 9 сом  (от 5 до 10 лет)""")
+        elif user_data[message.chat.id]['start_point'].lower() == 'бишкек' and user_data[message.chat.id]['end_point'].lower() == 'каинды' \
+                or user_data[message.chat.id]['end_point'].lower() == 'каиңды' and user_data[message.chat.id]['start_point'].lower() == 'каиңды' \
+                or user_data[message.chat.id]['start_point'].lower() == 'каинды'\
+                and user_data[message.chat.id]['end_point'].lower() == 'бишкек':
+            bot.send_message(message.chat.id,""" Пригородный  поезд «Бишкек-Каинды», «Каинды-Бишкек»
+
+Время указано местное.
+
+Поезд №6063 “Бишкек II - Каинды” время отправления по местному времени со станции «Бишкек II» в 17 часов 31 минуту, время прибытия на станцию «Каинды» в 20 часов 06 минут.
+Поезд №6064 “Каинды - Бишкек II” время отправления по местному времени со станции «Каинды» в 05 часов 07 минут, время прибытия на  станцию “Бишкек II” в 07 часов 32 минуты.
+
+Стоимость проезда:
+Взрослый билет: 26 сом
+Детский билет: 9 сом  (от 5 до 10 лет)""")
+
         markup = types.ReplyKeyboardRemove(selective=False)
+
         bot.send_message(message.chat.id, 'Нажмите на /kettik для того, чтобы начать.', reply_markup=markup)
     else:
         bot.send_message(message.chat.id, 'Хотите отправить этот пост в группу?', reply_markup=post_markup)
@@ -351,4 +413,3 @@ def post_message(message):
 bot.load_next_step_handlers()
 
 bot.infinity_polling()
-
